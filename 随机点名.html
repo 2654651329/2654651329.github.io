@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>课堂随机点名</title>
+    <style>
+        body {
+            background-color: #F9F3F3; /* 马卡龙浅粉色背景 */
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            color: #FF9A8B; /* 马卡龙橙色 */
+            font-size: 2.5em;
+            text-shadow: 2px 2px #FFD6D6;
+            margin: 20px 0;
+        }
+
+        #name-display {
+            width: 80%;
+            height: 300px;
+            background-color: #FFF5EB; /* 浅黄色背景 */
+            border-radius: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 30px 0;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+
+        #name-text {
+            font-family: '楷体', cursive;
+            font-size: 48px;
+            color: #7A77FF; /* 马卡龙蓝色 */
+            transition: all 0.3s ease;
+        }
+
+        .highlight {
+            font-size: 60px !important;
+            color: #FF6B6B !important; /* 强调色 */
+        }
+
+        button {
+            background-color: #8AFF8A; /* 马卡龙绿色 */
+            color: #4B4B4B;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+            margin-bottom: 30px;
+        }
+
+        button:hover {
+            background-color: #75D475;
+            transform: scale(1.05);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <h1>🎉 陈老师课堂随机点名 🎉</h1>
+    <div id="name-display">
+        <span id="name-text">准备好开始点名啦！</span>
+    </div>
+    <button id="action-btn">开始抽人</button>
+
+    <script>
+        const students = [
+            "王亦轩", "周梓桐", "刘依依",
+            "王修然", "赵欣迪", "谭煦莜"
+        ];
+        
+        let isRunning = false;
+        let intervalId = null;
+        const nameText = document.getElementById('name-text');
+        const actionBtn = document.getElementById('action-btn');
+
+        function randomPick() {
+            return students[Math.floor(Math.random() * students.length)];
+        }
+
+        function toggleRoll() {
+            if(isRunning) {
+                clearInterval(intervalId);
+                nameText.classList.add('highlight');
+                actionBtn.textContent = '开始抽人';
+                isRunning = false;
+            } else {
+                nameText.classList.remove('highlight');
+                intervalId = setInterval(() => {
+                    nameText.textContent = randomPick();
+                }, 50);
+                actionBtn.textContent = '暂停抽选';
+                isRunning = true;
+            }
+        }
+
+        actionBtn.addEventListener('click', toggleRoll);
+        // 初始随机显示一个名字
+        nameText.textContent = randomPick();
+    </script>
+</body>
+</html>
