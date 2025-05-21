@@ -5,17 +5,18 @@
     <title>课堂随机点名</title>
     <style>
         body {
-            background-color: #F9F3F3; /* 马卡龙浅粉色背景 */
+            background-color: #F9F3F3;
             margin: 0;
             padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
+            font-family: 'Arial', sans-serif;
         }
 
         h1 {
-            color: #FF9A8B; /* 马卡龙橙色 */
+            color: #FF9A8B;
             font-size: 2.5em;
             text-shadow: 2px 2px #FFD6D6;
             margin: 20px 0;
@@ -24,7 +25,7 @@
         #name-display {
             width: 80%;
             height: 300px;
-            background-color: #FFF5EB; /* 浅黄色背景 */
+            background-color: #FFF5EB;
             border-radius: 20px;
             display: flex;
             justify-content: center;
@@ -37,17 +38,18 @@
         #name-text {
             font-family: '楷体', cursive;
             font-size: 48px;
-            color: #7A77FF; /* 马卡龙蓝色 */
+            color: #7A77FF;
             transition: all 0.3s ease;
+            text-align: center;
         }
 
         .highlight {
             font-size: 60px !important;
-            color: #FF6B6B !important; /* 强调色 */
+            color: #FF6B6B !important;
         }
 
         button {
-            background-color: #8AFF8A; /* 马卡龙绿色 */
+            background-color: #8AFF8A;
             color: #4B4B4B;
             border: none;
             padding: 15px 40px;
@@ -56,7 +58,7 @@
             cursor: pointer;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             transition: all 0.2s ease;
-            margin-bottom: 30px;
+            margin: 10px;
         }
 
         button:hover {
@@ -67,31 +69,95 @@
         button:active {
             transform: scale(0.95);
         }
+
+        .control-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 80%;
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 10px;
+            border: 2px solid #FFD6D6;
+            font-size: 16px;
+        }
+
+        .file-input {
+            margin: 10px 0;
+        }
+
+        .student-list {
+            width: 80%;
+            margin-top: 20px;
+            background-color: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 <body>
     <h1>🎉 陈老师课堂随机点名 🎉</h1>
-    <div id="name-display">
-        <span id="name-text">准备好开始点名啦！</span>
+    
+    <div class="control-panel">
+        <div>
+            <button id="load-default-btn">加载默认名单</button>
+            <button id="load-file-btn">从文件导入名单</button>
+            <input type="file" id="file-input" class="file-input" accept=".txt,.csv" style="display: none;">
+        </div>
+        <textarea id="name-input" placeholder="请输入学生名单，每行一个名字或使用逗号分隔"></textarea>
+        <button id="update-btn">更新名单</button>
     </div>
+    
+    <div id="name-display">
+        <span id="name-text">请先加载学生名单</span>
+    </div>
+    
     <button id="action-btn">开始抽人</button>
+    
+    <div class="student-list">
+        <h3>当前学生名单 (<span id="student-count">0</span>人):</h3>
+        <div id="student-list-container"></div>
+    </div>
 
     <script>
-        const students = [
-            "王亦轩", "周梓桐", "刘依依",
-            "王修然", "赵欣迪", "谭煦莜"
-        ];
-        
+        // 默认学生名单
+        let students = [];
         let isRunning = false;
         let intervalId = null;
         const nameText = document.getElementById('name-text');
         const actionBtn = document.getElementById('action-btn');
+        const nameInput = document.getElementById('name-input');
+        const updateBtn = document.getElementById('update-btn');
+        const loadDefaultBtn = document.getElementById('load-default-btn');
+        const loadFileBtn = document.getElementById('load-file-btn');
+        const fileInput = document.getElementById('file-input');
+        const studentListContainer = document.getElementById('student-list-container');
+        const studentCount = document.getElementById('student-count');
+
+        // 默认名单
+        const defaultStudents = [
+            "王亦轩", "周梓桐", "刘依依",
+            "王修然", "赵欣迪", "谭煦莜"
+        ];
 
         function randomPick() {
+            if (students.length === 0) return "暂无学生名单";
             return students[Math.floor(Math.random() * students.length)];
         }
 
         function toggleRoll() {
+            if (students.length === 0) {
+                alert("请先加载学生名单！");
+                return;
+            }
+            
             if(isRunning) {
                 clearInterval(intervalId);
                 nameText.classList.add('highlight');
@@ -107,9 +173,76 @@
             }
         }
 
+        function updateStudentList() {
+            studentListContainer.innerHTML = students.join(", ");
+            studentCount.textContent = students.length;
+        }
+
+        function parseNames(input) {
+        // 支持换行或中英文逗号分隔的名字
+        let names = input.split(/[\n,，]/)
+            .map(name => name.trim())
+            .filter(name => name.length > 0);
+        return names;
+        }
+
+        function loadDefaultList() {
+            students = [...defaultStudents];
+            nameInput.value = students.join("\n");
+            updateStudentList();
+            nameText.textContent = "名单已加载，点击开始抽人";
+        }
+
+        function updateFromTextarea() {
+            const names = parseNames(nameInput.value);
+            if (names.length === 0) {
+                alert("请输入有效的学生名单！");
+                return;
+            }
+            students = names;
+            updateStudentList();
+            nameText.textContent = "名单已更新，点击开始抽人";
+        }
+
+        function loadFromFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    // 方法1：使用TextDecoder处理UTF-8编码
+                    const content = new TextDecoder('utf-8').decode(new Uint8Array(e.target.result));
+                    
+                    // 方法2：或者直接指定编码（部分浏览器支持）
+                    // const content = e.target.result;
+                    
+                    nameInput.value = content;
+                    students = parseNames(content);
+                    updateStudentList();
+                    nameText.textContent = "名单已导入，点击开始抽人";
+                } catch (error) {
+                    console.error("文件读取错误:", error);
+                    alert("文件读取失败，请确保是UTF-8编码的文本文件");
+                }
+            };
+            
+            // 使用readAsArrayBuffer而不是readAsText
+            reader.readAsArrayBuffer(file);
+            
+            // 或者尝试指定编码（如果浏览器支持）
+            // reader.readAsText(file, 'UTF-8');
+        }
+
+        // 事件监听
         actionBtn.addEventListener('click', toggleRoll);
-        // 初始随机显示一个名字
-        nameText.textContent = randomPick();
+        updateBtn.addEventListener('click', updateFromTextarea);
+        loadDefaultBtn.addEventListener('click', loadDefaultList);
+        loadFileBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', loadFromFile);
+
+        // 初始化
+        updateStudentList();
     </script>
 </body>
 </html>
